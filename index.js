@@ -1,15 +1,20 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
-const { joinVoiceChannel, createAudioResource, createAudioPlayer, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
+const { joinVoiceChannel, createAudioResource, createAudioPlayer, VoiceConnectionStatus } = require('@discordjs/voice');
 const googleTTS = require('google-tts-api');
 const http = require('http');
+const ffmpeg = require('ffmpeg-static');
 
 // Render 7/24 Aktif Tutma Sunucusu
-http.createServer((req, res) => { res.write("Bot 7/24 Aktif!"); res.end(); }).listen(process.env.PORT || 8080);
+http.createServer((req, res) => { 
+    res.write("Bot Aktif!"); 
+    res.end(); 
+}).listen(process.env.PORT || 8080);
 
-// --- AYARLAR ---
-const SAHIP_ID = process.env.SAHIP_ID; // Kendi ID'ni buraya yazma, Render'a yazacağız!
-// ---------------
+// FFmpeg yolunu sisteme tanıt (Hata almamak için kritik)
+process.env.FFMPEG_PATH = ffmpeg;
+
+const SAHIP_ID = process.env.SAHIP_ID;
 
 const client = new Client({ 
   intents: [
@@ -26,11 +31,11 @@ const player = createAudioPlayer();
 let connection = null;
 
 client.on('ready', () => {
-  console.log(`${client.user.tag} hazır! Sahip ID: ${SAHIP_ID}`);
+  console.log(`${client.user.tag} girişi yaptı. Sahip ID: ${SAHIP_ID}`);
 });
 
 client.on('messageCreate', async (message) => {
-  // 1. KOMUT: !katıl (Sadece sen sese sokabilirsin)
+  // 1. KOMUT: !katıl (Sadece sahibi sese sokabilir)
   if (message.content === "!katıl" && message.author.id === SAHIP_ID) {
     if (message.member?.voice.channel) {
       connection = joinVoiceChannel({
@@ -38,17 +43,16 @@ client.on('messageCreate', async (message) => {
         guildId: message.guild.id,
         adapterCreator: message.guild.voiceAdapterCreator,
         selfDeaf: false,
-        group: client.user.id
       });
 
       connection.subscribe(player);
-      return message.reply("Sese geldim, patron! DM'lerini seslendirmek için bekliyorum.");
+      return message.reply("Kanala giriş yaptım. Yazmanı bekliyorum.");
     } else {
       return message.reply("Önce bir ses kanalına girmelisin.");
     }
   }
 
-  // 2. DM SESLENDİRME: Sadece senden gelen DM'leri okur
+  // 2. DM SESLENDİRME: Sadece senin bota attığın DM'leri okur
   if (message.guild === null && message.author.id === SAHIP_ID) {
     if (!connection || connection.state.status === VoiceConnectionStatus.Disconnected) {
       return message.reply("Önce sunucuda `!katıl` yazarak beni bir kanala çağırmalısın.");
@@ -63,10 +67,10 @@ client.on('messageCreate', async (message) => {
 
       const resource = createAudioResource(url);
       player.play(resource);
-      message.react('🎙️'); // Seslendirildi işareti
+      message.react('✅'); 
     } catch (err) {
       console.error("Seslendirme Hatası:", err);
-      message.reply("Seslendirme sırasında bir hata oluştu.");
+      message.reply("Ses iletiminde teknik bir sorun çıktı.");
     }
   }
 });
