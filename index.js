@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('prism-media');
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { joinVoiceChannel, createAudioResource, createAudioPlayer, AudioPlayerStatus, VoiceConnectionStatus } = require('@discordjs/voice');
 const googleTTS = require('google-tts-api');
