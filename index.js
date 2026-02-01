@@ -47,7 +47,7 @@ client.on('messageCreate', async (message) => {
       });
 
       connection.subscribe(player);
-      return message.reply("Kanala girdim, sesini bekliyorum.");
+      return message.reply("Kanala girdim patron.");
     }
     return message.reply("Önce bir ses kanalına gir!");
   }
